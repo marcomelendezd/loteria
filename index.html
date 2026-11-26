@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a73c7" id="metaColor">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lotería">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Lotería Marijose y Diego</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --azul:#1a73c7; --azul-osc:#145a9c; --azul-claro:#e8f1fb;
+    --fondo:#f4f6f9; --tarjeta:#fff; --texto:#16202b; --suave:#6b7a8a;
+    --borde:#dde4ec; --verde:#1f9d55; --rojo:#d0342c; --ambar:#b7791f;
+    --acento:var(--azul); --acento-osc:var(--azul-osc); --acento-claro:var(--azul-claro);
+    --sombra:0 1px 2px rgba(16,32,48,.06), 0 4px 14px rgba(16,32,48,.07);
+  }
+  /* ---- Modo Navidad ---- */
+  body.navidad{
+    --fondo:#0b2a22; --tarjeta:#11352b; --texto:#f3f7f5; --suave:#9dbdb0;
+    --borde:#1d4f40; --azul-claro:#1d4f40;
+    --acento:#e8b64c; --acento-osc:#c4942f; --acento-claro:#1d4f40;
+    --sombra:0 1px 2px rgba(0,0,0,.25), 0 6px 18px rgba(0,0,0,.3);
+    background:
+      radial-gradient(1200px 500px at 50% -12%, #16503f 0%, transparent 62%),
+      linear-gradient(#0b2a22, #081d18 70%);
+    background-attachment:fixed;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--fondo); color:var(--texto); font-size:17px; line-height:1.45;
+    padding-bottom:calc(100px + env(safe-area-inset-bottom));
+    -webkit-text-size-adjust:100%; transition:background .3s,color .3s;
+  }
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer;border:none;background:none}
+
+  /* ---------- Nieve ---------- */
+  #nieve{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden;display:none}
+  body.navidad #nieve{display:block}
+  #nieve i{
+    position:absolute;top:-14px;color:#fff;opacity:.85;font-style:normal;
+    animation:caer linear infinite;
+  }
+  @keyframes caer{
+    0%{transform:translateY(-14px) translateX(0) rotate(0)}
+    100%{transform:translateY(104vh) translateX(26px) rotate(260deg)}
+  }
+  @media (prefers-reduced-motion: reduce){ #nieve{display:none !important} }
+
+  /* ---------- Cabecera ---------- */
+  header{
+    background:var(--tarjeta); border-bottom:1px solid var(--borde);
+    padding:calc(10px + env(safe-area-inset-top)) 16px 0;
+    position:sticky; top:0; z-index:40;
+  }
+  body.navidad header{background:rgba(17,53,43,.96);backdrop-filter:blur(6px)}
+  .hfila{display:flex;align-items:center;gap:12px;padding-bottom:10px}
+  header img.logo{height:42px;width:auto;display:block;border-radius:6px}
+  body.navidad header img.logo{background:#fff;padding:3px}
+  header .tit{font-weight:800;font-size:15px;line-height:1.15;color:var(--acento)}
+  header .tit span{display:block;font-weight:600;font-size:12.5px;color:var(--suave)}
+  header .acc{margin-left:auto;display:flex;gap:4px}
+  .icono{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+    color:var(--acento);background:var(--acento-claro);font-size:19px}
+  .icono:active{opacity:.7}
+
+  /* guirnalda */
+  .guirnalda{display:none;height:14px;margin:0 -16px;overflow:hidden;position:relative}
+  body.navidad .guirnalda{display:block}
+  .guirnalda b{
+    position:absolute;top:0;width:8px;height:8px;border-radius:50%;
+    animation:luz 2.4s ease-in-out infinite;
+  }
+  @keyframes luz{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+
+  /* pestañas */
+  .tabs{display:flex;gap:6px;padding:0 0 10px}
+  .tab{
+    flex:1;padding:9px 6px;border-radius:11px;font-weight:700;font-size:14.5px;
+    background:var(--acento-claro);color:var(--suave);text-align:center;
+  }
+  .tab.on{background:var(--acento);color:#fff}
+  body.navidad .tab.on{color:#14221c}
+
+  /* ---------- Estado ---------- */
+  .estado{
+    margin:10px 12px 0;padding:8px 12px;border-radius:11px;font-size:13.5px;font-weight:600;
+    display:flex;align-items:center;gap:8px;border:1px solid var(--borde);background:var(--tarjeta);
+    color:var(--suave);
+  }
+  .estado .pt{width:9px;height:9px;border-radius:50%;background:var(--suave);flex:0 0 auto}
+  .estado.ok .pt{background:var(--verde)}
+  .estado.local .pt{background:var(--ambar)}
+  .estado.mal .pt{background:var(--rojo)}
+  .estado button{margin-left:auto;color:var(--acento);font-weight:700;font-size:13.5px}
+
+  /* ---------- Cuenta atrás ---------- */
+  .cuenta{display:none;margin:12px 12px 0;border-radius:16px;padding:16px;text-align:center;
+    background:linear-gradient(135deg,#8c1c1c,#5d1111);color:#fff;box-shadow:var(--sombra);
+    border:1px solid rgba(232,182,76,.35)}
+  body.navidad .cuenta{display:block}
+  .cuenta .d{font-size:40px;font-weight:900;line-height:1;color:#e8b64c;letter-spacing:-1px}
+  .cuenta .t{font-size:14px;margin-top:4px;opacity:.9;font-weight:600}
+  .cuenta .s{font-size:12.5px;opacity:.7;margin-top:2px}
+
+  /* ---------- Resumen ---------- */
+  .resumen{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 12px 4px}
+  .caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;
+    padding:10px 8px;text-align:center;box-shadow:var(--sombra)}
+  .caja .n{font-weight:800;font-size:19px;letter-spacing:-.4px}
+  .caja .l{font-size:11px;color:var(--suave);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-top:2px}
+  .caja.mio .n{color:var(--acento)}
+  .caja.otros .n{color:var(--ambar)}
+  body.navidad .caja.otros .n{color:#f0a3a3}
+
+  /* ---------- Buscador y chips ---------- */
+  .barra{padding:10px 12px 2px;display:flex;gap:8px}
+  .barra input{flex:1;min-width:0;background:var(--tarjeta);border:1px solid var(--borde);
+    border-radius:12px;padding:11px 14px;font-size:16px}
+  .barra input:focus{outline:none;border-color:var(--acento)}
+  .chips{display:flex;gap:7px;overflow-x:auto;padding:10px 12px 2px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;padding:7px 14px;border-radius:999px;background:var(--tarjeta);
+    border:1px solid var(--borde);font-size:14px;font-weight:600;color:var(--suave);white-space:nowrap}
+  .chip.on{background:var(--acento);border-color:var(--acento);color:#fff}
+  body.navidad .chip.on{color:#14221c}
+
+  /* ---------- Lista ---------- */
+  .lista{padding:10px 12px 20px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:6}
+  .num{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;
+    box-shadow:var(--sombra);overflow:hidden}
+  .num.nav{border-color:rgba(232,182,76,.45)}
+  .num .cab{display:flex;align-items:center;gap:12px;padding:13px 14px}
+  .bola{flex:0 0 auto;min-width:92px;text-align:center;background:var(--acento-claro);
+    color:var(--acento-osc);border-radius:12px;padding:8px 10px;
+    font-weight:800;font-size:22px;letter-spacing:1px;font-variant-numeric:tabular-nums}
+  body.navidad .bola{background:linear-gradient(160deg,#f0c968,#c4942f);color:#2a1c06}
+  .num .met{flex:1;min-width:0}
+  .num .sorteo{font-size:13px;color:var(--suave);font-weight:600;text-transform:uppercase;
+    letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .num .jug{font-size:17px;font-weight:700;margin-top:1px}
+  .num .jug small{font-weight:600;color:var(--suave);font-size:13px}
+  .num .flecha{color:var(--suave);font-size:14px;padding:4px}
+  .partes{padding:11px 14px 12px;display:flex;flex-direction:column;gap:7px;border-top:1px solid var(--borde)}
+  .parte{display:flex;align-items:center;gap:10px;font-size:15px}
+  .parte .pn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .parte .pp{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;
+    background:var(--acento-claro);border-radius:8px;padding:2px 8px;color:var(--suave)}
+  .parte .pe{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:700;min-width:62px;text-align:right}
+  .parte.yo .pn{color:var(--acento)}
+  .parte.yo .pp{color:var(--acento-osc);background:var(--acento-claro)}
+  body.navidad .parte.yo .pp{color:#f0c968}
+  .alerta{margin:0 14px 12px;background:#fff6e6;border:1px solid #f0dcae;color:#8a5a00;
+    border-radius:10px;padding:8px 10px;font-size:13.5px;font-weight:600}
+  body.navidad .alerta{background:#3a2a0e;border-color:#6b5420;color:#f0d79a}
+  .acciones{display:flex;border-top:1px solid var(--borde)}
+  .acciones button{flex:1;padding:12px 4px;font-size:14.5px;font-weight:700;color:var(--suave);
+    display:flex;align-items:center;justify-content:center;gap:6px}
+  .acciones button+button{border-left:1px solid var(--borde)}
+  .acciones button:active{opacity:.6}
+  .vacio{text-align:center;padding:50px 28px;color:var(--suave)}
+  .vacio .big{font-size:48px;margin-bottom:10px}
+
+  /* ---------- Botón flotante ---------- */
+  .fab{position:fixed;left:50%;transform:translateX(-50%);white-space:nowrap;
+    bottom:calc(20px + env(safe-area-inset-bottom));
+    background:var(--acento);color:#fff;font-weight:800;font-size:17px;
+    padding:15px 30px;border-radius:999px;z-index:45;
+    box-shadow:0 6px 20px rgba(0,0,0,.3);display:flex;align-items:center;gap:9px}
+  body.navidad .fab{color:#14221c}
+  .fab:active{opacity:.85}
+
+  /* ---------- Hojas ---------- */
+  .fondo{position:fixed;inset:0;background:rgba(6,14,20,.55);z-index:60;opacity:0;
+    pointer-events:none;transition:opacity .2s}
+  .fondo.on{opacity:1;pointer-events:auto}
+  .hoja{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--fondo);
+    border-radius:20px 20px 0 0;max-height:94vh;display:flex;flex-direction:column;
+    transform:translateY(100%);transition:transform .25s cubic-bezier(.3,.8,.3,1)}
+  body.navidad .hoja{background:#0b2a22}
+  .hoja.on{transform:translateY(0)}
+  .hoja .hcab{display:flex;align-items:center;gap:10px;padding:14px;background:var(--tarjeta);
+    border-bottom:1px solid var(--borde);border-radius:20px 20px 0 0}
+  .hoja .hcab h2{margin:0;font-size:18px;flex:1;font-weight:800}
+  .hoja .hcab .x{font-size:15px;font-weight:700;color:var(--suave);padding:8px 10px}
+  .hoja .cuerpo{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 20px;flex:1}
+  .hoja .pie{padding:12px 14px calc(14px + env(safe-area-inset-bottom));background:var(--tarjeta);
+    border-top:1px solid var(--borde);display:flex;gap:10px}
+  .btn{flex:1;padding:15px;border-radius:14px;font-weight:800;font-size:16.5px;text-align:center;
+    background:var(--acento);color:#fff}
+  body.navidad .btn{color:#14221c}
+  .btn.sec{background:var(--acento-claro);color:var(--texto);flex:0 0 auto;padding-left:20px;padding-right:20px}
+  .campo{margin-bottom:14px}
+  .campo label{display:block;font-size:13.5px;font-weight:700;color:var(--suave);margin-bottom:6px;
+    text-transform:uppercase;letter-spacing:.3px}
+  .campo input{width:100%;background:var(--tarjeta);border:1px solid var(--borde);border-radius:13px;
+    padding:14px;font-size:17px}
+  .campo input:focus{outline:none;border-color:var(--acento)}
+  .campo .ayuda{font-size:13px;color:var(--suave);margin-top:5px}
+  .campo.mitad{display:inline-block;width:calc(50% - 5px)}
+  .campo.mitad+.campo.mitad{margin-left:10px}
+  input.numgrande{font-size:30px;font-weight:800;letter-spacing:4px;text-align:center;font-variant-numeric:tabular-nums}
+  .check{display:flex;align-items:center;gap:11px;background:var(--tarjeta);border:1px solid var(--borde);
+    border-radius:13px;padding:13px 14px;font-weight:600;margin-bottom:14px}
+  .check input{width:22px;height:22px;accent-color:var(--acento);flex:0 0 auto}
+  .seccion{font-size:13.5px;font-weight:800;color:var(--suave);text-transform:uppercase;
+    letter-spacing:.4px;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+  .seccion::after{content:"";flex:1;height:1px;background:var(--borde)}
+  .fila{display:flex;gap:8px;align-items:center;margin-bottom:9px}
+  .fila input[type=text]{flex:1;min-width:0;background:var(--tarjeta);border:1px solid var(--borde);
+    border-radius:12px;padding:12px}
+  .fila input[type=number]{width:94px;flex:0 0 auto;background:var(--tarjeta);border:1px solid var(--borde);
+    border-radius:12px;padding:12px 10px;text-align:right;font-variant-numeric:tabular-nums}
+  .fila input:focus{outline:none;border-color:var(--acento)}
+  .fila .quitar{flex:0 0 auto;width:38px;height:38px;border-radius:10px;background:rgba(208,52,44,.12);
+    color:var(--rojo);display:grid;place-items:center;font-size:19px;font-weight:700}
+  .anadir{width:100%;padding:13px;border-radius:13px;border:2px dashed var(--borde);
+    color:var(--acento);font-weight:700;font-size:15.5px;background:var(--tarjeta);margin-bottom:9px}
+  .cuadre{margin-top:14px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:12px 14px}
+  .cuadre .r{display:flex;justify-content:space-between;font-size:15px;padding:3px 0}
+  .cuadre .r b{font-variant-numeric:tabular-nums}
+  .cuadre .r.tot{border-top:1px solid var(--borde);margin-top:6px;padding-top:8px;font-weight:800;font-size:16px}
+  .cuadre .r.mal b{color:var(--rojo)}
+  .cuadre .r.bien b{color:var(--verde)}
+  body.navidad .cuadre .r.bien b{color:#7fd6a5}
+  .sug{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 10px}
+  .sug button{font-size:13.5px;padding:6px 12px;border-radius:999px;background:var(--acento-claro);
+    color:var(--acento-osc);font-weight:700}
+  body.navidad .sug button{color:#f0c968}
+  .aviso{padding:22px 10px;text-align:center;color:var(--suave);font-size:14px;line-height:1.6}
+
+  /* ---------- Logotipo ---------- */
+  .marca{font-family:"Archivo Black","Arial Black","Helvetica Neue",Impact,sans-serif;
+    font-weight:400;letter-spacing:-.01em;line-height:1;text-transform:uppercase;color:var(--acento)}
+  .marca .l2{display:block;margin-top:.22em;transform:scaleX(.82);transform-origin:left center;
+    letter-spacing:.005em}
+  .logo{display:grid;place-items:center;color:var(--acento);flex:0 0 auto}
+  .logo svg{width:100%;height:100%;display:block}
+  header .logo{width:40px;height:40px}
+  header .marca{font-size:15px}
+  header .marca .l2{font-size:11.5px;opacity:.85}
+
+  /* ---------- Animación de entrada ---------- */
+  #splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;
+    background:linear-gradient(160deg,#2f8ad8,#145a9c 55%,#0f4677);
+    transition:opacity .45s ease, transform .45s ease}
+  #splash.fuera{opacity:0;transform:translateY(-12px);pointer-events:none}
+  #splash .marco{text-align:center;padding:24px;color:#fff}
+  #splash .logo{width:112px;height:112px;margin:0 auto 20px;color:#fff;
+    animation:entraBombo .9s cubic-bezier(.2,1.5,.4,1) both}
+  #splash .logo svg{animation:girar 3.2s ease-in-out .7s both}
+  #splash .marca{color:#fff;font-size:34px}
+  #splash .marca .l1{display:block;animation:entraTexto .55s ease .45s both}
+  #splash .marca .l2{font-size:24px;animation:entraTexto .55s ease .62s both}
+  #splash .pie{margin-top:22px;font-size:13px;opacity:0;font-weight:600;letter-spacing:.08em;
+    animation:aparece .6s ease 1.05s both;text-transform:uppercase}
+  @keyframes entraBombo{
+    0%{opacity:0;transform:translateY(26px) scale(.55)}
+    100%{opacity:1;transform:translateY(0) scale(1)}
+  }
+  @keyframes girar{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(7deg)}}
+  @keyframes entraTexto{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:translateY(0)}}
+  @keyframes aparece{to{opacity:.75}}
+  @media (prefers-reduced-motion: reduce){
+    #splash .logo,#splash .logo svg,#splash .marca .l1,#splash .marca .l2,#splash .pie{animation:none;opacity:1}
+  }
+
+  /* ---------- Pantalla del PIN ---------- */
+  #pin{position:fixed;inset:0;z-index:150;display:none;flex-direction:column;align-items:center;
+    justify-content:center;padding:24px calc(24px + env(safe-area-inset-left)) 34px;
+    background:linear-gradient(160deg,#f7fafd,#e6eef7)}
+  #pin.on{display:flex}
+  #pin .logo{width:82px;height:82px;margin-bottom:14px}
+  #pin .marca{font-size:21px;margin-bottom:26px;text-align:center}
+  #pin .marca .l2{font-size:15px;transform:scaleX(.84);transform-origin:center}
+  #pin h1{font-size:16px;font-weight:700;color:var(--suave);margin:0 0 16px}
+  #pin .puntos{display:flex;gap:14px;margin-bottom:10px}
+  #pin .puntos i{width:15px;height:15px;border-radius:50%;background:#cdd9e5;
+    border:2px solid #b9c8d8;transition:transform .12s, background .12s}
+  #pin .puntos i.ll{background:var(--azul);border-color:var(--azul);transform:scale(1.14)}
+  #pin .err{color:var(--rojo);font-weight:700;font-size:14.5px;height:22px;margin-bottom:6px}
+  #pin.malo .puntos{animation:temblor .4s}
+  @keyframes temblor{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}
+    45%{transform:translateX(8px)}70%{transform:translateX(-5px)}}
+  .teclado{display:grid;grid-template-columns:repeat(3,76px);gap:13px;margin-top:8px}
+  .teclado button{height:66px;border-radius:50%;background:#fff;font-size:26px;font-weight:700;
+    color:var(--texto);box-shadow:0 1px 3px rgba(16,32,48,.13);display:grid;place-items:center}
+  .teclado button:active{background:#e8f1fb;transform:scale(.95)}
+  .teclado button.aux{background:transparent;box-shadow:none;font-size:15px;font-weight:700;color:var(--suave)}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="bombo" viewBox="0 0 100 100">
+  <path d="M27 88 H12 V12 H88 V88 H73" fill="none" stroke="currentColor" stroke-width="9"/>
+  <ellipse cx="50" cy="56" rx="20" ry="22" fill="currentColor"/>
+  <g fill="none" stroke="var(--hueco,#fff)" stroke-width="2.8">
+    <path d="M50 34 V78"/>
+    <ellipse cx="50" cy="56" rx="7" ry="22"/>
+    <ellipse cx="50" cy="56" rx="14" ry="22"/>
+  </g>
+  <ellipse cx="50" cy="33.5" rx="7.5" ry="2.6" fill="currentColor"/>
+  <path d="M44.5 76.5 H55.5 L53 85 H47 Z" fill="currentColor"/>
+</symbol></svg>
+
+<div id="splash">
+  <div class="marco">
+    <div class="logo" style="--hueco:#145a9c"><svg viewBox="0 0 100 100"><use href="#bombo"></use></svg></div>
+    <div class="marca"><span class="l1">Lotería</span><span class="l2">Marijose y Diego</span></div>
+    <div class="pie">Cargando…</div>
+  </div>
+</div>
+
+<div id="pin">
+  <div class="logo"><svg viewBox="0 0 100 100"><use href="#bombo"></use></svg></div>
+  <div class="marca"><span class="l1">Lotería</span><span class="l2">Marijose y Diego</span></div>
+  <h1 id="pinTitulo">Introduce el PIN</h1>
+  <div class="puntos" id="pinPuntos"></div>
+  <div class="err" id="pinError"></div>
+  <div class="teclado" id="teclado">
+    <button data-d="1">1</button><button data-d="2">2</button><button data-d="3">3</button>
+    <button data-d="4">4</button><button data-d="5">5</button><button data-d="6">6</button>
+    <button data-d="7">7</button><button data-d="8">8</button><button data-d="9">9</button>
+    <button class="aux" data-a="nada"></button><button data-d="0">0</button>
+    <button class="aux" data-a="borrar">&#9003;</button>
+  </div>
+</div>
+
+<div id="nieve"></div>
+
+<header>
+  <div class="hfila">
+    <div class="logo"><svg viewBox="0 0 100 100"><use href="#bombo"></use></svg></div>
+    <div style="flex:1;min-width:0">
+      <div class="marca"><span class="l1">Lotería</span><span class="l2">Marijose y Diego</span></div>
+      <div id="subt" style="font-size:11.5px;color:var(--suave);font-weight:600;margin-top:3px"></div>
+    </div>
+    <div class="acc">
+      <button class="icono" id="bComprobar" title="Comprobar premios">&#127942;</button>
+      <button class="icono" id="bPersonas" title="Personas">&#128101;</button>
+      <button class="icono" id="bMenu" title="Opciones">&#9881;</button>
+    </div>
+  </div>
+  <div class="guirnalda" id="guirnalda"></div>
+  <div class="tabs">
+    <button class="tab on" data-tab="todos">Todos</button>
+    <button class="tab" data-tab="navidad">&#127876; Navidad</button>
+  </div>
+</header>
+
+<div class="estado local" id="estado"><span class="pt"></span><span id="estadoTxt">Guardando solo en este móvil</span></div>
+
+<div class="cuenta" id="cuenta"></div>
+
+<div class="resumen">
+  <div class="caja"><div class="n" id="rNums">0</div><div class="l">Números</div></div>
+  <div class="caja otros"><div class="n" id="rOtros">0 €</div><div class="l">De otros</div></div>
+  <div class="caja mio"><div class="n" id="rMio">0 €</div><div class="l">Mío</div></div>
+</div>
+
+<div class="barra"><input id="buscar" type="search" placeholder="Buscar número o persona..."></div>
+<div class="chips" id="chips"></div>
+<div class="lista" id="lista"></div>
+
+<button class="fab" id="bNuevo"><span style="font-size:21px;line-height:1">+</span> Añadir número</button>
+
+<div class="fondo" id="fondo"></div>
+
+<div class="hoja" id="hojaNum">
+  <div class="hcab"><h2 id="hTitulo">Nuevo número</h2><button class="x" id="hCerrar">Cancelar</button></div>
+  <div class="cuerpo">
+    <div class="campo"><label for="fNumero">Número</label>
+      <input id="fNumero" class="numgrande" type="text" inputmode="numeric" maxlength="5" placeholder="00000"></div>
+    <div class="campo"><label for="fSorteo">Sorteo</label>
+      <input id="fSorteo" type="text" list="dlSorteos" placeholder="Navidad 2026">
+      <datalist id="dlSorteos"></datalist></div>
+    <label class="check"><input type="checkbox" id="fNav"> &#127876; Es del sorteo de Navidad</label>
+    <div class="campo mitad"><label for="fTotal">Jugamos (€)</label>
+      <input id="fTotal" type="number" inputmode="decimal" min="0" step="0.5" placeholder="0"></div>
+    <div class="campo mitad"><label for="fDonde">Dónde</label>
+      <input id="fDonde" type="text" placeholder="Administración"></div>
+    <div class="seccion">Con quién se comparte</div>
+    <div id="filas"></div>
+    <button class="anadir" id="bAnadirP">+ Añadir persona</button>
+    <div class="sug" id="sugerencias"></div>
+    <div class="cuadre" id="cuadre"></div>
+  </div>
+  <div class="pie">
+    <button class="btn sec" id="bBorrar">Borrar</button>
+    <button class="btn" id="bGuardar">Guardar</button>
+  </div>
+</div>
+
+<div class="hoja" id="hojaInfo">
+  <div class="hcab"><h2 id="iTitulo">Información</h2><button class="x" id="iCerrar">Cerrar</button></div>
+  <div class="cuerpo" id="iCuerpo"></div>
+</div>
+
+<script type="module">
+import { firebaseConfig, SALA, SORTEO_NAVIDAD, CUENTA, PIN_LONGITUD, PIN_PREFIJO } from "./config.js";
+
+/* ================= Estado ================= */
+const CLAVE = "loteria_mjd_v2";
+let datos = { numeros: [], yo: "Mío" };
+let pestana = "todos", filtroSorteo = "", textoBuscar = "", editando = null;
+let nube = null;          // { setDoc, deleteDoc, docRef }
+let instalador = null;    // beforeinstallprompt
+
+const $ = s => document.querySelector(s);
+
+/* ================= Guardado local ================= */
+function cargarLocal(){
+  try{
+    const s = localStorage.getItem(CLAVE);
+    if(s){ const d = JSON.parse(s); if(d && Array.isArray(d.numeros)) datos = d; }
+  }catch(e){}
+  if(!datos.yo) datos.yo = "Mío";
+}
+function guardarLocal(){
+  try{ localStorage.setItem(CLAVE, JSON.stringify(datos)); }catch(e){}
+}
+
+/* ================= Utilidades ================= */
+const eur = n => {
+  n = Math.round((Number(n)||0)*100)/100;
+  let s = n.toFixed(2).replace(".", ",");
+  if(s.endsWith(",00")) s = s.slice(0,-3);
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " €";
+};
+const pct = p => {
+  p = Math.round((Number(p)||0)*10)/10;
+  return (p % 1 === 0 ? p.toFixed(0) : p.toFixed(1).replace(".",",")) + " %";
+};
+const esc = t => String(t==null?"":t).replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const sumaPartes = n => (n.partes||[]).reduce((a,p)=> a + (Number(p.eur)||0), 0);
+const miParte = n => Math.max(0, (Number(n.total)||0) - sumaPartes(n));
+const esNavidad = n => !!n.nav || /navidad/i.test(n.sorteo||"");
+
+/* ================= Nube (Firebase) ================= */
+const VERSIONES = ["13.1.0", "12.19.0", "11.10.0"];
+
+async function cargarFirebase(){
+  for(const v of VERSIONES){
+    try{
+      const base = `https://www.gstatic.com/firebasejs/${v}/`;
+      const app = await import(base + "firebase-app.js");
+      const fs  = await import(base + "firebase-firestore.js");
+      let auth = null;
+      try{ auth = await import(base + "firebase-auth.js"); }catch(e){}
+      return { app, fs, auth };
+    }catch(e){ /* probamos la siguiente versión */ }
+  }
+  return null;
+}
+
+function estado(clase, txt, accion){
+  const e = $("#estado");
+  e.className = "estado " + clase;
+  $("#estadoTxt").textContent = txt;
+  const vieja = e.querySelector("button");
+  if(vieja) vieja.remove();
+  if(accion){
+    const b = document.createElement("button");
+    b.textContent = accion.texto;
+    b.onclick = accion.fn;
+    e.appendChild(b);
+  }
+}
+
+/* ================= PIN ================= */
+let authRef = null;
+
+function pintarPuntos(n){
+  $("#pinPuntos").innerHTML = Array.from({ length: PIN_LONGITUD },
+    (_, i) => `<i class="${i < n ? "ll" : ""}"></i>`).join("");
+}
+
+function pedirPin(authMod, app){
+  const auth = authMod.getAuth(app);
+  authRef = { mod: authMod, auth };
+
+  return new Promise(resolver => {
+    let resuelto = false;
+    const quita = authMod.onAuthStateChanged(auth, u => {
+      if(resuelto) return;
+      if(u){ resuelto = true; quita(); resolver(true); return; }
+      quita();
+      abrirPin();
+    });
+
+    function abrirPin(){
+      const caja = $("#pin");
+      caja.classList.add("on");
+      let cifras = "", ocupado = false;
+      pintarPuntos(0);
+
+      $("#teclado").onclick = async ev => {
+        const b = ev.target.closest("button");
+        if(!b || ocupado) return;
+        if(b.dataset.a === "borrar"){ cifras = cifras.slice(0,-1); pintarPuntos(cifras.length); return; }
+        if(!b.dataset.d) return;
+
+        if(cifras.length < PIN_LONGITUD) cifras += b.dataset.d;
+        pintarPuntos(cifras.length);
+        $("#pinError").textContent = "";
+        if(cifras.length < PIN_LONGITUD) return;
+
+        ocupado = true;
+        $("#pinTitulo").textContent = "Comprobando…";
+        try{
+          await authMod.signInWithEmailAndPassword(auth, CUENTA, PIN_PREFIJO + cifras);
+          caja.classList.remove("on");
+          $("#teclado").onclick = null;
+          if(!resuelto){ resuelto = true; resolver(true); }
+        }catch(e){
+          const muchos = e && String(e.code||"").includes("too-many-requests");
+          $("#pinError").textContent = muchos
+            ? "Demasiados intentos. Espera un rato."
+            : "PIN incorrecto";
+          caja.classList.add("malo");
+          setTimeout(() => caja.classList.remove("malo"), 450);
+          $("#pinTitulo").textContent = "Introduce el PIN";
+          cifras = ""; pintarPuntos(0); ocupado = false;
+        }
+      };
+    }
+  });
+}
+
+async function salir(){
+  if(authRef){ try{ await authRef.mod.signOut(authRef.auth); }catch(e){} }
+  location.reload();
+}
+
+async function conectar(){
+  if(!firebaseConfig || !firebaseConfig.projectId){
+    estado("local", "Guardando solo en este móvil");
+    return;
+  }
+  estado("", "Conectando...");
+  const mod = await cargarFirebase();
+  if(!mod){
+    estado("mal", "No se pudo cargar la nube. Se guarda en este móvil.");
+    return;
+  }
+  try{
+    const app = mod.app.initializeApp(firebaseConfig);
+
+    // Entrada con PIN: solo pasa quien sepa las cifras.
+    if(mod.auth){
+      const ok = await pedirPin(mod.auth, app);
+      if(!ok){
+        estado("mal", "Sin entrar, se guarda solo en este móvil");
+        return;
+      }
+    }
+
+    let db;
+    try{
+      db = mod.fs.initializeFirestore(app, {
+        localCache: mod.fs.persistentLocalCache({ tabManager: mod.fs.persistentMultipleTabManager() })
+      });
+    }catch(e){ db = mod.fs.getFirestore(app); }
+
+    const col = mod.fs.collection(db, "salas", SALA, "numeros");
+    const ajustes = mod.fs.doc(db, "salas", SALA);
+
+    nube = {
+      guardar: async obj => mod.fs.setDoc(mod.fs.doc(col, obj.id), obj),
+      borrar:  async id  => mod.fs.deleteDoc(mod.fs.doc(col, id)),
+      ajustes: async o   => mod.fs.setDoc(ajustes, o, { merge: true })
+    };
+
+    let reloj = setTimeout(() => {
+      estado("mal", "La nube tarda en responder. Mientras, ves lo guardado aquí.");
+    }, 10000);
+
+    mod.fs.onSnapshot(col, snap => {
+      clearTimeout(reloj);
+      const lista = [];
+      snap.forEach(d => {
+        const o = d.data() || {};
+        lista.push({
+          id: d.id,
+          numero: String(o.numero||""),
+          sorteo: String(o.sorteo||""),
+          total: Number(o.total)||0,
+          donde: String(o.donde||""),
+          nav: !!o.nav,
+          partes: Array.isArray(o.partes)
+            ? o.partes.map(p => ({ nombre: String((p&&p.nombre)||""), eur: Number(p&&p.eur)||0 }))
+            : []
+        });
+      });
+      const pendientes = snap.metadata && snap.metadata.hasPendingWrites;
+      estado("ok", pendientes ? "Guardando..." : "Sincronizado en todos los móviles");
+      const locales = datos.numeros;
+      datos.numeros = lista;
+      guardarLocal();
+      pintar();
+      if(!lista.length && locales.length && !sessionStorage.getItem("subido")){
+        sessionStorage.setItem("subido","1");
+        if(confirm(`En la nube no hay nada todavía. ¿Subir los ${locales.length} números de este móvil?`)){
+          locales.forEach(n => nube.guardar(n).catch(()=>{}));
+        }
+      }
+    }, err => {
+      clearTimeout(reloj);
+      nube = null;
+      estado("mal", "Sin acceso a la nube. Se guarda en este móvil.");
+    });
+
+    mod.fs.onSnapshot(ajustes, d => {
+      const o = d.data();
+      if(!o) return;
+      if(o.yo) datos.yo = String(o.yo);
+      if(o.premios) datos.premios = o.premios;
+      guardarLocal(); pintar();
+    }, ()=>{});
+
+  }catch(e){
+    nube = null;
+    estado("mal", "No se pudo conectar con la nube. Se guarda en este móvil.");
+  }
+}
+
+/* ================= Guardar un número ================= */
+async function escribir(obj){
+  const i = datos.numeros.findIndex(n => n.id === obj.id);
+  if(i >= 0) datos.numeros[i] = obj; else datos.numeros.push(obj);
+  guardarLocal(); pintar();
+  if(nube){ try{ await nube.guardar(obj); }catch(e){ alert("No se pudo guardar en la nube, pero está guardado en este móvil."); } }
+}
+async function eliminar(id){
+  datos.numeros = datos.numeros.filter(n => n.id !== id);
+  guardarLocal(); pintar();
+  if(nube){ try{ await nube.borrar(id); }catch(e){} }
+}
+
+/* ================= Navidad ================= */
+function montarNieve(){
+  const c = $("#nieve");
+  if(c.childElementCount) return;
+  const copos = ["❄","❅","✻","•"];
+  let h = "";
+  for(let i=0;i<26;i++){
+    const izq = Math.random()*100, dur = 7 + Math.random()*9, ret = -Math.random()*12,
+          tam = 9 + Math.random()*13, op = .35 + Math.random()*.5;
+    h += `<i style="left:${izq}%;font-size:${tam}px;opacity:${op};animation-duration:${dur}s;animation-delay:${ret}s">${copos[i%copos.length]}</i>`;
+  }
+  c.innerHTML = h;
+}
+function montarGuirnalda(){
+  const g = $("#guirnalda");
+  if(g.childElementCount) return;
+  const cols = ["#e8b64c","#d0342c","#7fd6a5","#8fc4f0"];
+  let h = "";
+  for(let i=0;i<26;i++){
+    h += `<b style="left:${(i*4)+1}%;background:${cols[i%4]};box-shadow:0 0 7px ${cols[i%4]};animation-delay:${(i%5)*.3}s"></b>`;
+  }
+  g.innerHTML = h;
+}
+function diasParaNavidad(){
+  const objetivo = new Date(SORTEO_NAVIDAD);
+  const ahora = new Date();
+  const ms = objetivo - ahora;
+  return { dias: Math.ceil(ms / 86400000), pasado: ms < 0 };
+}
+function pintarCuenta(){
+  const { dias, pasado } = diasParaNavidad();
+  const f = new Date(SORTEO_NAVIDAD);
+  const fecha = f.toLocaleDateString("es-ES", { day:"numeric", month:"long", year:"numeric" });
+  $("#cuenta").innerHTML = pasado
+    ? `<div class="d">&#127881;</div><div class="t">El sorteo ya se ha celebrado</div><div class="s">${esc(fecha)}</div>`
+    : `<div class="d">${dias}</div><div class="t">${dias === 1 ? "día para el Sorteo de Navidad" : "días para el Sorteo de Navidad"}</div><div class="s">${esc(fecha)}</div>`;
+}
+
+/* ================= Pintar ================= */
+function sorteos(){
+  const vistos = new Set(), r = [];
+  datos.numeros.forEach(n => {
+    const s = (n.sorteo||"").trim();
+    if(s && !vistos.has(s)){ vistos.add(s); r.push(s); }
+  });
+  return r.sort();
+}
+function visibles(){
+  const q = textoBuscar.trim().toLowerCase();
+  return datos.numeros.filter(n => {
+    if(pestana === "navidad" && !esNavidad(n)) return false;
+    if(filtroSorteo && (n.sorteo||"").trim() !== filtroSorteo) return false;
+    if(!q) return true;
+    if((n.numero||"").includes(q)) return true;
+    if((n.sorteo||"").toLowerCase().includes(q)) return true;
+    if((n.donde||"").toLowerCase().includes(q)) return true;
+    return (n.partes||[]).some(p => (p.nombre||"").toLowerCase().includes(q));
+  }).sort((a,b) => (b.sorteo||"").localeCompare(a.sorteo||"") || (a.numero||"").localeCompare(b.numero||""));
+}
+
+function pintar(){
+  document.body.classList.toggle("navidad", pestana === "navidad");
+  $("#metaColor").setAttribute("content", pestana === "navidad" ? "#0b2a22" : "#1a73c7");
+  if(pestana === "navidad"){ montarNieve(); montarGuirnalda(); pintarCuenta(); }
+  document.querySelectorAll(".tab").forEach(t =>
+    t.classList.toggle("on", t.dataset.tab === pestana));
+
+  const ss = pestana === "navidad" ? [] : sorteos();
+  const ch = $("#chips");
+  if(ss.length > 1){
+    ch.style.display = "flex";
+    ch.innerHTML = `<button class="chip${filtroSorteo?"":" on"}" data-s="">Todos</button>` +
+      ss.map(s => `<button class="chip${filtroSorteo===s?" on":""}" data-s="${esc(s)}">${esc(s)}</button>`).join("");
+  } else { ch.style.display = "none"; if(pestana==="navidad") filtroSorteo = ""; }
+
+  const vs = visibles();
+  let tOtros = 0, tMio = 0;
+  vs.forEach(n => { tOtros += sumaPartes(n); tMio += miParte(n); });
+  $("#rNums").textContent = vs.length;
+  $("#rOtros").textContent = eur(tOtros);
+  $("#rMio").textContent = eur(tMio);
+  const sb = pestana === "navidad" ? "Sorteo de Navidad" : filtroSorteo;
+  $("#subt").textContent = sb || "";
+  $("#subt").style.display = sb ? "" : "none";
+
+  const L = $("#lista");
+  if(!vs.length){
+    L.innerHTML = pestana === "navidad"
+      ? '<div class="vacio"><div class="big">&#127876;</div><p><b>Todavía no hay números de Navidad.</b><br>Añade uno y marca la casilla de Navidad.</p></div>'
+      : (datos.numeros.length
+        ? '<div class="vacio"><div class="big">&#128269;</div><p>No hay resultados.</p></div>'
+        : '<div class="vacio"><div class="big">&#127915;</div><p><b>Todavía no hay números.</b><br>Pulsa <b>Añadir número</b> para empezar.</p></div>');
+    return;
+  }
+  L.innerHTML = vs.map(n => {
+    const total = Number(n.total)||0, mio = miParte(n), sobra = sumaPartes(n) - total;
+    const fs = (n.partes||[]).map(p => {
+      const e = Number(p.eur)||0;
+      return `<div class="parte"><span class="pn">${esc(p.nombre||"Sin nombre")}</span>`+
+             `<span class="pp">${pct(total? e/total*100 : 0)}</span>`+
+             `<span class="pe">${eur(e)}</span></div>`;
+    });
+    if(mio > 0.004){
+      fs.push(`<div class="parte yo"><span class="pn">${esc(datos.yo)}</span>`+
+              `<span class="pp">${pct(total? mio/total*100 : 0)}</span>`+
+              `<span class="pe">${eur(mio)}</span></div>`);
+    }
+    return `<div class="num${esNavidad(n)?" nav":""}" data-id="${esc(n.id)}">`+
+      `<div class="cab" data-ed="1">`+
+        `<div class="bola">${esc(n.numero||"?????")}</div>`+
+        `<div class="met">`+
+          `<div class="sorteo">${esNavidad(n)?"&#127876; ":""}${esc(n.sorteo||"Sin sorteo")}${n.donde?" &middot; "+esc(n.donde):""}</div>`+
+          `<div class="jug">${eur(total)} <small>jugados</small></div>`+
+        `</div><div class="flecha">&#9654;</div>`+
+      `</div>`+
+      (fs.length ? `<div class="partes">${fs.join("")}</div>` : "")+
+      (sobra > 0.004 ? `<div class="alerta">&#9888;&#65039; Las partes suman ${eur(sumaPartes(n))}, más de lo jugado.</div>` : "")+
+      `<div class="acciones">`+
+        `<button data-ed="1">&#9998; Editar</button>`+
+        `<button data-comp="1">&#128228; Compartir</button>`+
+      `</div></div>`;
+  }).join("");
+}
+
+/* ================= Hoja del número ================= */
+const abrirHoja = el => { $("#fondo").classList.add("on"); el.classList.add("on"); };
+function cerrarHojas(){
+  $("#fondo").classList.remove("on");
+  $("#hojaNum").classList.remove("on");
+  $("#hojaInfo").classList.remove("on");
+  if(document.activeElement) document.activeElement.blur();
+}
+function nombresConocidos(){
+  const m = new Set();
+  datos.numeros.forEach(n => (n.partes||[]).forEach(p => {
+    const x = (p.nombre||"").trim(); if(x) m.add(x);
+  }));
+  return [...m].sort();
+}
+const filaHTML = (nombre, e) =>
+  `<div class="fila"><input type="text" class="pn" placeholder="Nombre" value="${esc(nombre||"")}">`+
+  `<input type="number" class="pe" inputmode="decimal" min="0" step="0.5" placeholder="€" value="${(e===""||e==null)?"":e}">`+
+  `<button class="quitar" type="button">&times;</button></div>`;
+
+function pintarSugerencias(){
+  const ya = [...document.querySelectorAll("#filas .pn")].map(i => i.value.trim().toLowerCase());
+  $("#sugerencias").innerHTML = nombresConocidos()
+    .filter(n => !ya.includes(n.toLowerCase())).slice(0,8)
+    .map(n => `<button type="button" data-n="${esc(n)}">+ ${esc(n)}</button>`).join("");
+}
+function pintarCuadre(){
+  const total = Number($("#fTotal").value)||0;
+  let s = 0;
+  document.querySelectorAll("#filas .fila").forEach(f => s += Number(f.querySelector(".pe").value)||0);
+  const resto = total - s;
+  let h = `<div class="r"><span>Total que jugamos</span><b>${eur(total)}</b></div>`+
+          `<div class="r"><span>Reparto a otros</span><b>${eur(s)} &middot; ${pct(total? s/total*100:0)}</b></div>`;
+  h += resto < -0.004
+    ? `<div class="r tot mal"><span>Te pasas por</span><b>${eur(-resto)}</b></div>`
+    : `<div class="r tot bien"><span>Queda para ${esc(datos.yo)}</span><b>${eur(resto)} &middot; ${pct(total? resto/total*100:0)}</b></div>`;
+  $("#cuadre").innerHTML = h;
+  pintarSugerencias();
+}
+function rellenarSorteos(){
+  $("#dlSorteos").innerHTML = sorteos().map(s => `<option value="${esc(s)}">`).join("");
+}
+function nuevoNumero(){
+  editando = null;
+  $("#hTitulo").textContent = "Nuevo número";
+  $("#fNumero").value = "";
+  $("#fSorteo").value = pestana === "navidad" ? "Navidad 2026" : (filtroSorteo || sorteos()[0] || "");
+  $("#fNav").checked = pestana === "navidad";
+  $("#fTotal").value = ""; $("#fDonde").value = "";
+  $("#filas").innerHTML = filaHTML("", "");
+  $("#bBorrar").style.display = "none";
+  rellenarSorteos(); pintarCuadre(); abrirHoja($("#hojaNum"));
+  setTimeout(() => $("#fNumero").focus(), 320);
+}
+function editarNumero(nid){
+  const n = datos.numeros.find(x => x.id === nid);
+  if(!n) return;
+  editando = nid;
+  $("#hTitulo").textContent = "Número " + (n.numero||"");
+  $("#fNumero").value = n.numero||"";
+  $("#fSorteo").value = n.sorteo||"";
+  $("#fNav").checked = esNavidad(n);
+  $("#fTotal").value = (Number(n.total)||0) || "";
+  $("#fDonde").value = n.donde||"";
+  $("#filas").innerHTML = (n.partes && n.partes.length ? n.partes : [{nombre:"",eur:""}])
+    .map(p => filaHTML(p.nombre, p.eur)).join("");
+  $("#bBorrar").style.display = "";
+  rellenarSorteos(); pintarCuadre(); abrirHoja($("#hojaNum"));
+}
+function guardarNumero(){
+  let num = $("#fNumero").value.replace(/\D/g,"").slice(0,5);
+  if(!num){ alert("Pon el número."); $("#fNumero").focus(); return; }
+  num = num.padStart(5, "0");
+  const partes = [];
+  document.querySelectorAll("#filas .fila").forEach(f => {
+    const nom = f.querySelector(".pn").value.trim();
+    const e = Number(f.querySelector(".pe").value)||0;
+    if(nom || e > 0) partes.push({ nombre: nom || "Sin nombre", eur: e });
+  });
+  escribir({
+    id: editando || nuevoId(),
+    numero: num,
+    sorteo: $("#fSorteo").value.trim(),
+    nav: $("#fNav").checked,
+    total: Number($("#fTotal").value)||0,
+    donde: $("#fDonde").value.trim(),
+    partes
+  });
+  cerrarHojas();
+}
+function borrarNumero(){
+  if(!editando) return;
+  const n = datos.numeros.find(x => x.id === editando);
+  if(!confirm("¿Borrar el número " + (n ? n.numero : "") + "?")) return;
+  eliminar(editando); cerrarHojas();
+}
+
+/* ================= Compartir ================= */
+function textoNumero(n){
+  const total = Number(n.total)||0, mio = miParte(n);
+  const l = [`*Número ${n.numero}*${n.sorteo ? " — " + n.sorteo : ""}`, `Jugamos: ${eur(total)}`];
+  (n.partes||[]).forEach(p => {
+    const e = Number(p.eur)||0;
+    l.push(`• ${p.nombre||"Sin nombre"}: ${eur(e)} (${pct(total? e/total*100:0)})`);
+  });
+  if(mio > 0.004) l.push(`• ${datos.yo}: ${eur(mio)} (${pct(total? mio/total*100:0)})`);
+  return l.join("\n");
+}
+function compartir(txt){
+  if(navigator.share) navigator.share({ text: txt }).catch(()=>{});
+  else if(navigator.clipboard){
+    navigator.clipboard.writeText(txt).then(
+      () => alert("Copiado. Ya puedes pegarlo en WhatsApp."),
+      () => prompt("Copia este texto:", txt));
+  } else prompt("Copia este texto:", txt);
+}
+
+/* ================= Hojas de información ================= */
+function abrirInfo(titulo, html){
+  $("#iTitulo").textContent = titulo;
+  $("#iCuerpo").innerHTML = html;
+  abrirHoja($("#hojaInfo"));
+}
+function verPersonas(){
+  const m = {};
+  visibles().forEach(n => (n.partes||[]).forEach(p => {
+    const k = (p.nombre||"Sin nombre").trim() || "Sin nombre";
+    if(!m[k]) m[k] = { eur: 0, nums: [] };
+    m[k].eur += Number(p.eur)||0;
+    m[k].nums.push(n.numero);
+  }));
+  const ks = Object.keys(m).sort((a,b) => m[b].eur - m[a].eur);
+  if(!ks.length){ abrirInfo("Personas", '<div class="aviso">Todavía no has repartido ningún número.</div>'); return; }
+  const tot = ks.reduce((a,k) => a + m[k].eur, 0);
+  const h = ks.map(k =>
+    `<div class="num" style="margin-bottom:9px"><div class="cab">`+
+    `<div class="met"><div style="font-weight:800;font-size:17px">${esc(k)}</div>`+
+    `<div class="sorteo" style="text-transform:none;letter-spacing:0">${m[k].nums.length} número${m[k].nums.length>1?"s":""}: ${esc(m[k].nums.join(", "))}</div></div>`+
+    `<div style="font-weight:800;font-size:18px;color:var(--acento)">${eur(m[k].eur)}</div></div>`+
+    `<div class="acciones"><button data-cobro="${esc(k)}">&#128228; Mandarle su resumen</button></div></div>`
+  ).join("") + `<div class="cuadre"><div class="r tot"><span>Total a cobrar</span><b>${eur(tot)}</b></div></div>`;
+  abrirInfo("Personas" + (pestana === "navidad" ? " · Navidad" : ""), h);
+}
+function resumenPersona(nombre){
+  const l = [`*${nombre}* — participaciones`];
+  let t = 0;
+  visibles().forEach(n => (n.partes||[]).forEach(p => {
+    if(((p.nombre||"Sin nombre").trim()||"Sin nombre") !== nombre) return;
+    const e = Number(p.eur)||0, total = Number(n.total)||0;
+    t += e;
+    l.push(`• ${n.numero}${n.sorteo? " ("+n.sorteo+")":""}: ${eur(e)} de ${eur(total)} — ${pct(total? e/total*100:0)}`);
+  }));
+  l.push("", `*Total: ${eur(t)}*`);
+  compartir(l.join("\n"));
+}
+function resumenCompleto(){
+  const l = ["*LOTERÍA MARIJOSE Y DIEGO*", ""];
+  let tot = 0, otros = 0;
+  visibles().forEach(n => { l.push(textoNumero(n), ""); tot += Number(n.total)||0; otros += sumaPartes(n); });
+  l.push(`*Total jugado: ${eur(tot)}*`, `De otros: ${eur(otros)} · Mío: ${eur(tot-otros)}`);
+  return l.join("\n");
+}
+/* ================= Comprobador ================= */
+const PRESETS_PREMIO = [
+  ["El Gordo", 400000], ["2º premio", 125000], ["3º premio", 50000],
+  ["4º premio", 20000], ["5º premio", 6000],
+  ["Aprox. 1º", 2000], ["Aprox. 2º", 1250], ["Aprox. 3º", 960], ["Centena", 100]
+];
+const PRESETS_TERM = [["Pedrea / terminación", 100], ["Reintegro", 20]];
+
+function premiosGuardados(){
+  const p = datos.premios || {};
+  return {
+    precio: Number(p.precio) || 20,
+    mayores: Array.isArray(p.mayores) ? p.mayores : [],
+    terms: Array.isArray(p.terms) ? p.terms : []
+  };
+}
+const filaPremio = (n, e) =>
+  `<div class="fila" data-tipo="mayor"><input type="text" class="pn" inputmode="numeric" maxlength="5" placeholder="Número" value="${esc(n||"")}">`+
+  `<input type="number" class="pe" inputmode="decimal" min="0" step="1" placeholder="€ al décimo" value="${(e===""||e==null)?"":e}">`+
+  `<button class="quitar" type="button">&times;</button></div>`;
+const filaTerm = (c, e) =>
+  `<div class="fila" data-tipo="term"><input type="text" class="pn" inputmode="numeric" maxlength="4" placeholder="Acaba en..." value="${esc(c||"")}">`+
+  `<input type="number" class="pe" inputmode="decimal" min="0" step="1" placeholder="€ al décimo" value="${(e===""||e==null)?"":e}">`+
+  `<button class="quitar" type="button">&times;</button></div>`;
+
+function verComprobador(){
+  const p = premiosGuardados();
+  abrirInfo("Comprobar premios",
+    `<div id="resultados"></div>`+
+    `<div class="campo"><label for="cPrecio">Precio del décimo</label>`+
+    `<input id="cPrecio" type="number" inputmode="decimal" min="1" step="1" value="${p.precio}">`+
+    `<div class="ayuda">20 € en Navidad y en el Niño. Con esto se calcula lo que toca por cada euro jugado.</div></div>`+
+
+    `<div class="seccion">Números premiados</div>`+
+    `<div id="cMayores">${p.mayores.length ? p.mayores.map(m => filaPremio(m.numero, m.eur)).join("") : filaPremio("","")}</div>`+
+    `<div class="sug">${PRESETS_PREMIO.map((x,i) => `<button type="button" data-pre="${i}">${esc(x[0])}</button>`).join("")}</div>`+
+    `<button class="anadir" id="cMasPremio">+ Otro número premiado</button>`+
+
+    `<div class="seccion">Terminaciones y reintegros</div>`+
+    `<div id="cTerms">${p.terms.length ? p.terms.map(t => filaTerm(t.cifras, t.eur)).join("") : filaTerm("","")}</div>`+
+    `<div class="sug">${PRESETS_TERM.map((x,i) => `<button type="button" data-pret="${i}">${esc(x[0])}</button>`).join("")}</div>`+
+    `<button class="anadir" id="cMasTerm">+ Otra terminación</button>`+
+
+    `<button class="btn" id="cComprobar" style="margin-top:18px">Comprobar mis números</button>`+
+    `<div class="aviso">Esto es orientativo: antes de ir a cobrar, confirma el décimo en la administración o en la lista oficial.</div>`);
+}
+
+function leerPremios(){
+  const mayores = [], terms = [];
+  document.querySelectorAll('#cMayores .fila').forEach(f => {
+    const n = f.querySelector(".pn").value.replace(/\D/g,"").slice(0,5);
+    const e = Number(f.querySelector(".pe").value)||0;
+    if(n && e > 0) mayores.push({ numero: n.padStart(5,"0"), eur: e });
+  });
+  document.querySelectorAll('#cTerms .fila').forEach(f => {
+    const c = f.querySelector(".pn").value.replace(/\D/g,"").slice(0,4);
+    const e = Number(f.querySelector(".pe").value)||0;
+    if(c && e > 0) terms.push({ cifras: c, eur: e });
+  });
+  return { precio: Number($("#cPrecio").value) || 20, mayores, terms };
+}
+
+function premiosDe(n, p){
+  const num = String(n.numero||"");
+  const lineas = [];
+  const exactos = p.mayores.filter(m => m.numero === num);
+  if(exactos.length){
+    const mejor = exactos.reduce((a,b) => b.eur > a.eur ? b : a);
+    lineas.push({ txt: "Número premiado", eur: mejor.eur });
+  }
+  const largas = p.terms.filter(t => t.cifras.length > 1 && num.endsWith(t.cifras));
+  if(largas.length){
+    const mejor = largas.reduce((a,b) =>
+      (b.cifras.length > a.cifras.length || (b.cifras.length === a.cifras.length && b.eur > a.eur)) ? b : a);
+    lineas.push({ txt: "Acaba en " + mejor.cifras, eur: mejor.eur });
+  }
+  const rein = p.terms.filter(t => t.cifras.length === 1 && num.endsWith(t.cifras));
+  if(rein.length){
+    const mejor = rein.reduce((a,b) => b.eur > a.eur ? b : a);
+    lineas.push({ txt: "Reintegro (acaba en " + mejor.cifras + ")", eur: mejor.eur });
+  }
+  const alDecimo = lineas.reduce((a,l) => a + l.eur, 0);
+  const porEuro = alDecimo / (p.precio || 20);
+  return { lineas, alDecimo, porEuro, total: (Number(n.total)||0) * porEuro };
+}
+
+function comprobar(){
+  const p = leerPremios();
+  datos.premios = p;
+  guardarLocal();
+  if(nube) nube.ajustes({ premios: p }).catch(()=>{});
+
+  const lista = visibles();
+  const ganadores = [];
+  let total = 0;
+  lista.forEach(n => {
+    const r = premiosDe(n, p);
+    if(r.alDecimo > 0){ ganadores.push({ n, r }); total += r.total; }
+  });
+
+  const caja = $("#resultados");
+  if(!p.mayores.length && !p.terms.length){
+    caja.innerHTML = `<div class="cuadre" style="margin:0 0 16px"><div class="r"><span>Apunta abajo los números y terminaciones que han salido, y vuelve a pulsar.</span></div></div>`;
+    if(caja.scrollIntoView) caja.scrollIntoView({ block:"start" }); return;
+  }
+  if(!ganadores.length){
+    caja.innerHTML = `<div class="cuadre" style="margin:0 0 16px"><div class="r tot"><span>Ninguno de tus ${lista.length} números ha salido</span></div>`+
+      `<div class="r"><span>Comprobados con ${p.mayores.length} número${p.mayores.length===1?"":"s"} y ${p.terms.length} terminacion${p.terms.length===1?"":"es"}.</span></div></div>`;
+    if(caja.scrollIntoView) caja.scrollIntoView({ block:"start" }); return;
+  }
+
+  caja.innerHTML =
+    `<div class="cuadre" style="margin:0 0 12px"><div class="r tot bien">`+
+    `<span>${ganadores.length === 1 ? "¡Ha tocado 1 número!" : `¡Han tocado ${ganadores.length} números!`}</span><b>${eur(total)}</b></div></div>`+
+    ganadores.map(({n,r}) => {
+      const partes = (n.partes||[]).map(x => ({ nombre: x.nombre||"Sin nombre", eur: Number(x.eur)||0 }));
+      const mio = miParte(n);
+      if(mio > 0.004) partes.push({ nombre: datos.yo, eur: mio, yo: true });
+      return `<div class="num" style="margin-bottom:10px"><div class="cab">`+
+        `<div class="bola">${esc(n.numero)}</div>`+
+        `<div class="met"><div class="sorteo">${esc(n.sorteo||"Sin sorteo")}</div>`+
+        `<div class="jug">${eur(r.total)} <small>en total</small></div></div></div>`+
+        `<div class="partes">`+
+          r.lineas.map(l => `<div class="parte"><span class="pn">${esc(l.txt)}</span><span class="pe">${eur(l.eur)} al décimo</span></div>`).join("")+
+          `<div class="parte"><span class="pn" style="color:var(--suave)">Por cada euro jugado</span><span class="pe">${eur(r.porEuro)}</span></div>`+
+        `</div>`+
+        `<div class="partes">`+
+          partes.map(x => `<div class="parte${x.yo?" yo":""}"><span class="pn">${esc(x.nombre)}</span>`+
+            `<span class="pp">${eur(x.eur)} jug.</span><span class="pe">${eur(x.eur * r.porEuro)}</span></div>`).join("")+
+        `</div>`+
+        `<div class="acciones"><button data-premio="${esc(n.id)}">&#128228; Mandar el reparto</button></div></div>`;
+    }).join("");
+  if(caja.scrollIntoView) caja.scrollIntoView({ block:"start" });
+}
+
+function textoPremio(nid){
+  const n = datos.numeros.find(x => x.id === nid);
+  if(!n) return "";
+  const r = premiosDe(n, premiosGuardados());
+  const l = [`*¡Premio! Número ${n.numero}*${n.sorteo ? " — " + n.sorteo : ""}`];
+  r.lineas.forEach(x => l.push(`${x.txt}: ${eur(x.eur)} al décimo`));
+  l.push(`Jugábamos ${eur(n.total)} → *${eur(r.total)}*`, "");
+  (n.partes||[]).forEach(p => l.push(`• ${p.nombre||"Sin nombre"}: ${eur((Number(p.eur)||0) * r.porEuro)}`));
+  const mio = miParte(n);
+  if(mio > 0.004) l.push(`• ${datos.yo}: ${eur(mio * r.porEuro)}`);
+  l.push("", "Comprobadlo en la administración antes de cobrar.");
+  return l.join("\n");
+}
+
+function verAjustes(){
+  abrirInfo("Opciones",
+   `<div class="campo"><label>Cómo te llamas en los repartos</label>`+
+   `<input id="aYo" type="text" value="${esc(datos.yo)}" placeholder="Mío">`+
+   `<div class="ayuda">Es la parte que queda sin repartir en cada número.</div></div>`+
+   `<div class="seccion">La app en el móvil</div>`+
+   `<button class="anadir" id="aInstalar">&#128241; Instalar en la pantalla de inicio</button>`+
+   `<div class="ayuda" style="margin-bottom:14px">Si el botón no hace nada, usa el menú del navegador (&#8942;) y elige <b>Añadir a pantalla de inicio</b>.</div>`+
+   `<div class="seccion">Copia de seguridad</div>`+
+   `<button class="anadir" id="aExport">&#128190; Descargar copia de los datos</button>`+
+   `<button class="anadir" id="aImport">&#128229; Restaurar desde un archivo</button>`+
+   `<button class="anadir" id="aTodo">&#128228; Compartir resumen completo</button>`+
+   (authRef ? `<div class="seccion">Entrada</div>`+
+     `<button class="anadir" id="aSalir">&#128274; Salir y pedir el PIN otra vez</button>` : "")+
+   `<div class="seccion">Zona peligrosa</div>`+
+   `<button class="anadir" id="aBorrarTodo" style="border-color:rgba(208,52,44,.5);color:var(--rojo)">Borrar todos los números</button>`+
+   `<div class="aviso">${nube
+      ? "Los datos están en la nube: lo que escribas aquí lo ve cualquier móvil que abra la app."
+      : "Ahora mismo los datos se guardan solo en este móvil."}</div>`);
+}
+
+/* ================= Copias ================= */
+function exportar(){
+  const txt = JSON.stringify(datos, null, 2);
+  const blob = new Blob([txt], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "loteria-copia-" + new Date().toISOString().slice(0,10) + ".json";
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function importar(){
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "application/json,.json";
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0];
+    if(!f) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try{
+        const d = JSON.parse(fr.result);
+        if(!d || !Array.isArray(d.numeros)) throw 0;
+        if(!confirm(`Se añadirán ${d.numeros.length} números de la copia. ¿Seguir?`)) return;
+        d.numeros.forEach(n => escribir({
+          id: n.id || nuevoId(),
+          numero: String(n.numero||""), sorteo: String(n.sorteo||""),
+          nav: !!n.nav, total: Number(n.total)||0, donde: String(n.donde||""),
+          partes: Array.isArray(n.partes) ? n.partes : []
+        }));
+        cerrarHojas();
+      }catch(e){ alert("Ese archivo no vale como copia."); }
+    };
+    fr.readAsText(f);
+  };
+  inp.click();
+}
+
+/* ================= Eventos ================= */
+document.addEventListener("click", ev => {
+  const t = ev.target;
+  if(!t.closest) return;
+
+  const tab = t.closest(".tab");
+  if(tab){ pestana = tab.dataset.tab; filtroSorteo = ""; pintar(); return; }
+
+  const chip = t.closest(".chip");
+  if(chip){ filtroSorteo = chip.dataset.s || ""; pintar(); return; }
+
+  const tarjeta = t.closest(".num[data-id]");
+  if(tarjeta){
+    const btn = t.closest("[data-ed],[data-comp]");
+    if(btn && btn.hasAttribute("data-ed")){ editarNumero(tarjeta.dataset.id); return; }
+    if(btn && btn.hasAttribute("data-comp")){
+      const n = datos.numeros.find(x => x.id === tarjeta.dataset.id);
+      if(n) compartir(textoNumero(n));
+      return;
+    }
+  }
+
+  const cob = t.closest("[data-cobro]");
+  if(cob){ resumenPersona(cob.dataset.cobro); return; }
+
+  const pr = t.closest("[data-premio]");
+  if(pr){ compartir(textoPremio(pr.dataset.premio)); return; }
+
+  const pre = t.closest("[data-pre]");
+  if(pre){
+    const [, eurs] = PRESETS_PREMIO[Number(pre.dataset.pre)];
+    const vacia = [...document.querySelectorAll("#cMayores .fila")]
+      .find(f => !f.querySelector(".pn").value.trim());
+    if(vacia) vacia.querySelector(".pe").value = eurs;
+    else $("#cMayores").insertAdjacentHTML("beforeend", filaPremio("", eurs));
+    const ultima = vacia || $("#cMayores").lastElementChild;
+    ultima.querySelector(".pn").focus();
+    return;
+  }
+  const pret = t.closest("[data-pret]");
+  if(pret){
+    const [, eurs] = PRESETS_TERM[Number(pret.dataset.pret)];
+    const vacia = [...document.querySelectorAll("#cTerms .fila")]
+      .find(f => !f.querySelector(".pn").value.trim());
+    if(vacia) vacia.querySelector(".pe").value = eurs;
+    else $("#cTerms").insertAdjacentHTML("beforeend", filaTerm("", eurs));
+    const ultima = vacia || $("#cTerms").lastElementChild;
+    ultima.querySelector(".pn").focus();
+    return;
+  }
+
+  const sug = t.closest("#sugerencias button");
+  if(sug){
+    const vacia = [...document.querySelectorAll("#filas .fila")]
+      .find(f => !f.querySelector(".pn").value.trim());
+    if(vacia){ vacia.querySelector(".pn").value = sug.dataset.n; vacia.querySelector(".pe").focus(); }
+    else {
+      $("#filas").insertAdjacentHTML("beforeend", filaHTML(sug.dataset.n, ""));
+      $("#filas").lastElementChild.querySelector(".pe").focus();
+    }
+    pintarCuadre(); return;
+  }
+
+  if(t.closest(".quitar")){
+    const f = t.closest(".fila");
+    if(!f) return;
+    const tipo = f.dataset.tipo;
+    const caja = f.parentElement;
+    f.remove();
+    if(caja && !caja.querySelector(".fila")){
+      caja.insertAdjacentHTML("beforeend",
+        tipo === "mayor" ? filaPremio("","") : tipo === "term" ? filaTerm("","") : filaHTML("",""));
+    }
+    if(!tipo) pintarCuadre();
+    return;
+  }
+
+  switch(t.id){
+    case "bNuevo": nuevoNumero(); break;
+    case "bAnadirP":
+      $("#filas").insertAdjacentHTML("beforeend", filaHTML("",""));
+      $("#filas").lastElementChild.querySelector(".pn").focus();
+      pintarCuadre(); break;
+    case "bGuardar": guardarNumero(); break;
+    case "bBorrar": borrarNumero(); break;
+    case "hCerrar": case "iCerrar": case "fondo": cerrarHojas(); break;
+    case "bPersonas": verPersonas(); break;
+    case "bComprobar": verComprobador(); break;
+    case "cMasPremio":
+      $("#cMayores").insertAdjacentHTML("beforeend", filaPremio("",""));
+      $("#cMayores").lastElementChild.querySelector(".pn").focus(); break;
+    case "cMasTerm":
+      $("#cTerms").insertAdjacentHTML("beforeend", filaTerm("",""));
+      $("#cTerms").lastElementChild.querySelector(".pn").focus(); break;
+    case "cComprobar": comprobar(); break;
+    case "bMenu": verAjustes(); break;
+    case "aExport": exportar(); break;
+    case "aImport": importar(); break;
+    case "aTodo": compartir(resumenCompleto()); break;
+    case "aSalir": salir(); break;
+    case "aInstalar":
+      if(instalador){ instalador.prompt(); instalador = null; }
+      else alert("Abre el menú del navegador (⋮) y elige «Añadir a pantalla de inicio».");
+      break;
+    case "aBorrarTodo":
+      if(confirm("¿Seguro que quieres borrar TODOS los números? No se puede deshacer.")){
+        const ids = datos.numeros.map(n => n.id);
+        datos.numeros = []; guardarLocal(); cerrarHojas(); pintar();
+        if(nube) ids.forEach(i => nube.borrar(i).catch(()=>{}));
+      }
+      break;
+  }
+});
+
+document.addEventListener("input", ev => {
+  const t = ev.target;
+  if(t.id === "buscar"){ textoBuscar = t.value; pintar(); return; }
+  if(t.id === "aYo"){
+    datos.yo = t.value.trim() || "Mío";
+    guardarLocal(); pintar();
+    if(nube) nube.ajustes({ yo: datos.yo }).catch(()=>{});
+    return;
+  }
+  if(t.id === "fTotal" || (t.closest && t.closest("#filas"))) pintarCuadre();
+});
+
+$("#fNumero").addEventListener("input", function(){
+  this.value = this.value.replace(/\D/g,"").slice(0,5);
+});
+$("#fSorteo").addEventListener("change", function(){
+  if(/navidad/i.test(this.value)) $("#fNav").checked = true;
+});
+
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); instalador = e; });
+
+/* ================= Arranque ================= */
+function quitarSplash(){
+  const s = $("#splash");
+  if(!s || s.classList.contains("fuera")) return;
+  s.classList.add("fuera");
+  setTimeout(() => s.remove(), 500);
+}
+const rapido = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+setTimeout(quitarSplash, rapido ? 300 : 1950);
+$("#splash").addEventListener("click", quitarSplash);
+
+cargarLocal();
+pintar();
+conectar();
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
